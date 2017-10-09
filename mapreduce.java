@@ -20,7 +20,7 @@ public class Pivot {
 
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			String[] itr = value.toString().split(",");
-			for (int i = 0; i == itr.length; i++) {
+			for (int i = 0; i < itr.length; i++) {
 				context.write(new IntWritable(i), new Text(itr[i]));
 			}
 		}
@@ -28,10 +28,10 @@ public class Pivot {
 
 	public static class PivotReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
 		private Text result = new Text();
-		String value = "";
 
 		public void reduce(IntWritable key, Iterable<Text> values, Context context)
 				throws IOException, InterruptedException {
+			String value = "";
 			for (Text V : values) {
 				value += V.toString() + ",";
 			}
