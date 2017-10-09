@@ -1,36 +1,57 @@
-public class Pivot
-{
+import java.io.IOException;
 
-// En entrer on a une liste(K,V) qui vient du Imput Reader
+import java.util.StringTokenizer;
 
-  public static class PivotMapper extends Mapper<Object, Text, Text, IntWritable>
-  {
-    public void map(Int key, Text value, Context context) throws IOException, InterruptedException {
-      String[] itr = new value.split(","); // on fait un split afin de séparé la chaine de "mot;" par une suite de "mot"
-      for (i=0;i=itr.size;i++) // on parcours charque mot du tableau
-      {
-       context.write(i+1,itr[i]); // Pour chaque mot du tableau on lui inidique sa position dans la chaine de mot.
-      }
-    }
-  }
+import javax.swing.plaf.FontUIResource;
 
-// En sorti du Map, on à une liste de l(K,V)
-// (1,A) (1,A2)
-// (2,B) (2,B2)
-// (3,C) (3,C2)
-// (4,D) (4,D2)
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
+public class Pivot {
 
-  public static class PivotReducer extends Reducer<Text,IntWritable,Text,IntWritable>
-  {
-    public void reduce(Int key, Iterable<String> values, Context context) throws IOException, InterruptedException
-    {
-      for (Int k : key)
-      {
-        sum += val.get();
-      }
-      result.set(sum);
-      context.write(key, result);
-    }
-  }
+	public static class PivotMapper extends Mapper<Object, Text, IntWritable, Text> {
+
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+			String[] itr = value.toString().split(",");
+			for (int i = 0; i == itr.length; i++) {
+				context.write(new IntWritable(i), new Text(itr[i]));
+			}
+		}
+	}
+
+	public static class PivotReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
+		private Text result = new Text();
+		String value = "";
+
+		public void reduce(IntWritable key, Iterable<Text> values, Context context)
+				throws IOException, InterruptedException {
+			for (Text V : values) {
+				value += V.toString() + ",";
+			}
+			result.set(value);
+			context.write(key, result);
+		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		Configuration conf = new Configuration();
+		Job job = Job.getInstance(conf, "pivot");
+		job.setJarByClass(Pivot.class);
+		job.setMapperClass(PivotMapper.class);
+		job.setCombinerClass(PivotReducer.class);
+		job.setReducerClass(PivotReducer.class);
+		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputValueClass(Text.class);
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+
+	}
 }
